@@ -1,0 +1,48 @@
+service: backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: dev
+  region: us-west-2
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    JWT_SECRET: ${env:JWT_SECRET, 'default-secret-change-me'}
+    DYNAMO_ENDPOINT: ${env:DYNAMO_ENDPOINT, ''}
+
+  iam: ${file(./serverless-resources/iam.yml)}
+
+plugins:
+  - serverless-esbuild
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+functions:
+  api:
+    handler: src/index.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+
+resources:
+  Resources: ${file(./serverless-resources/dynamo.yml)}
+
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: []
+    target: node20
+    platform: node
+  serverless-offline:
+    httpPort: 3000
+    noPrependStageInUrl: true
