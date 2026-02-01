@@ -1,5 +1,5 @@
 {
-  "name": "lambda-node-hono-monorepo",
+  "name": "lambda-node-hono",
   "private": true,
   "workspaces": [
     "apps/*"

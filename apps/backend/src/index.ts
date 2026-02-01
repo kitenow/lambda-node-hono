@@ -2,14 +2,34 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { handle } from 'hono/aws-lambda'
 import authApp from './account/auth'
+import usersApp from './users'
+import jwt from 'jsonwebtoken'
 
 const app = new Hono()
+
+// Middleware to verify JWT token from cookie
+const authMiddleware = async (c: any, next: any) => {
+    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+    const token = c.req.header('Cookie')?.split('; ').find((s: string) => s.startsWith('token='))?.split('=')[1]
+
+    if (!token) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    try {
+        jwt.verify(token, JWT_SECRET)
+        await next()
+    } catch (err) {
+        return c.json({ error: 'Invalid token' }, 401)
+    }
+}
 
 app.use('*', async (c, next) => {
     const corsMiddleware = cors({
         origin: (origin) => {
             const allowedOrigins = [
                 'http://localhost:5173',
+                'https://d2nybw662z7eao.cloudfront.net',
                 'http://lambda-node-hono.s3-website-us-west-2.amazonaws.com',
                 'https://gjqvt44n0m.execute-api.us-west-2.amazonaws.com' // API Gateway itself if needed
             ]
@@ -17,7 +37,7 @@ app.use('*', async (c, next) => {
         },
         credentials: true,
         allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
-        allowHeaders: ['Content-Type', 'Authorization'],
+        allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
         exposeHeaders: ['Set-Cookie']
     })
     return corsMiddleware(c, next)
@@ -26,5 +46,9 @@ app.use('*', async (c, next) => {
 
 // --- Auth Routes ---
 app.route('/auth', authApp)
+
+// --- Protected Routes ---
+app.route('/users', usersApp)
+// app.use('/users/*', authMiddleware) // Protecting users routes
 
 export const handler = handle(app)

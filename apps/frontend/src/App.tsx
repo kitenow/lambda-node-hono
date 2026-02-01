@@ -25,7 +25,9 @@ function Dashboard() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_URL}/users`)
+      const res = await fetch(`${API_URL}/users`, {
+        credentials: 'include'
+      })
       const data = await res.json()
       setUsers(data.users || [])
     } catch (err) {
@@ -44,6 +46,7 @@ function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email }),
+        credentials: 'include',
       })
       setName('')
       setEmail('')
@@ -133,8 +136,29 @@ function Dashboard() {
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('token')
-  return token ? <>{children}</> : <Navigate to="/login" />
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          localStorage.setItem('user', JSON.stringify(data.user))
+          setAuthorized(true)
+        } else {
+          setAuthorized(false)
+        }
+      } catch (err) {
+        setAuthorized(false)
+      }
+    }
+    checkAuth()
+  }, [])
+
+  if (authorized === null) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  return authorized ? <>{children}</> : <Navigate to="/login" />
 }
 
 function App() {

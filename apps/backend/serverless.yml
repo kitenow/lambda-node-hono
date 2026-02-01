@@ -11,7 +11,7 @@ provider:
     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     JWT_SECRET: ${env:JWT_SECRET, 'default-secret-change-me'}
-    DYNAMO_ENDPOINT: ${env:DYNAMO_ENDPOINT, ''}
+    DYNAMO_ENDPOINT: ${self:custom.dynamoEndpoint.${opt:stage, self:provider.stage}}
 
   iam: ${file(./serverless-resources/iam.yml)}
 
@@ -36,6 +36,9 @@ resources:
 
 
 custom:
+  dynamoEndpoint:
+    dev: "http://127.0.0.1:8000"
+    prod: ""
   esbuild:
     bundle: true
     minify: false

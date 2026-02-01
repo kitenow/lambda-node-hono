@@ -5,6 +5,7 @@ import { rateLimiter } from 'hono-rate-limiter'
 import { PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { randomUUID } from 'crypto'
 import { dynamo, TABLE_NAME } from '../dynamo/client'
 
 
@@ -48,7 +49,7 @@ auth.post('/signup', async (c) => {
 
         const hashedPassword = await bcrypt.hash(password, 10)
         const user = {
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             type: 'USER',
             email,
             password: hashedPassword,
@@ -56,12 +57,19 @@ auth.post('/signup', async (c) => {
             createdAt: new Date().toISOString()
         }
 
+        // Persist user to DynamoDB
+        await dynamo.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: user
+        }))
+
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' })
 
+        const isProduction = process.env.NODE_ENV === 'production';
         setCookie(c, 'token', token, {
             httpOnly: true,
-            secure: true, // Should be true in production (HTTPS)
-            sameSite: 'None', // Neccessary for cross-site S3 to API Gateway
+            secure: isProduction, // Set secure to true only in production
+            sameSite: isProduction ? 'None' : 'Lax', // Set SameSite to 'None' in production, 'Lax' otherwise for local development
             maxAge: 3600,
             path: '/'
         })
@@ -92,10 +100,11 @@ auth.post('/login', async (c) => {
 
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' })
 
+        const isProduction = process.env.NODE_ENV === 'production';
         setCookie(c, 'token', token, {
             httpOnly: true,
-            secure: true,
-            sameSite: 'None',
+            secure: isProduction,
+            sameSite: isProduction ? 'None' : 'Lax',
             maxAge: 3600,
             path: '/'
         })
@@ -123,7 +132,7 @@ auth.post('/forgot-password', async (c) => {
             return c.json({ message: 'If email exists, a reset link was sent' })
         }
 
-        const resetToken = crypto.randomUUID()
+        const resetToken = randomUUID()
         const expiry = Date.now() + 3600000 // 1 hour
 
         await dynamo.send(new PutCommand({
@@ -211,10 +220,11 @@ auth.get('/me', async (c) => {
 
 // Logout
 auth.post('/logout', async (c) => {
+    const isProduction = process.env.NODE_ENV === 'production';
     deleteCookie(c, 'token', {
         path: '/',
-        secure: true,
-        sameSite: 'None'
+        secure: isProduction,
+        sameSite: isProduction ? 'None' : 'Lax'
     })
     return c.json({ message: 'Logged out successfully' })
 })
