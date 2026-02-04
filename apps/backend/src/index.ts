@@ -3,6 +3,8 @@ import { cors } from 'hono/cors'
 import { handle } from 'hono/aws-lambda'
 import authApp from './account/auth'
 import usersApp from './users'
+import snippetsApp from './snippets'
+import meApp from './me'
 import jwt from 'jsonwebtoken'
 
 const app = new Hono()
@@ -49,6 +51,8 @@ app.route('/auth', authApp)
 
 // --- Protected Routes ---
 app.route('/users', usersApp)
+app.route('/snippets', snippetsApp)
+app.route('/me', meApp)
 // app.use('/users/*', authMiddleware) // Protecting users routes
 
 export const handler = handle(app)

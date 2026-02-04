@@ -6,6 +6,7 @@ export default function Signup() {
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
     const [error, setError] = useState('')
+    const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
@@ -15,6 +16,7 @@ export default function Signup() {
         e.preventDefault()
         setLoading(true)
         setError('')
+        setSuccess(false)
 
         try { // Added try block
             const res = await fetch(`${API_URL}/auth/signup`, {
@@ -28,7 +30,10 @@ export default function Signup() {
 
             if (!res.ok) throw new Error(data.error || 'Signup failed')
 
-            navigate('/login')
+            setSuccess(true)
+            setTimeout(() => {
+                navigate('/login')
+            }, 2000)
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -57,6 +62,11 @@ export default function Signup() {
                         {error && (
                             <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-red-500 text-xs text-center font-medium">
                                 {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-green-600 text-xs text-center font-medium">
+                                Registration successful! Redirecting to login...
                             </div>
                         )}
 
