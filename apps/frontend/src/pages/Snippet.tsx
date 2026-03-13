@@ -1,72 +1,26 @@
-import { useState, useEffect } from 'react'
-
-interface Snippet {
-    id: string
-    title: string
-    code: string
-    language: string
-    createdAt: string
-}
+import { useState } from 'react'
+import { useSnippets } from '../hooks/useSnippets'
 
 export default function Snippet() {
-    const [snippets, setSnippets] = useState<Snippet[]>([])
-    const [loading, setLoading] = useState(false)
+    const { snippets, loading, createSnippet, deleteSnippet } = useSnippets()
+    const [isAdding, setIsAdding] = useState(false)
     const [title, setTitle] = useState('')
     const [code, setCode] = useState('')
     const [language, setLanguage] = useState('javascript')
-    const [isAdding, setIsAdding] = useState(false)
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
-    const fetchSnippets = async () => {
-        try {
-            setLoading(true)
-            const res = await fetch(`${API_URL}/snippets`, { credentials: 'include' })
-            const data = await res.json()
-            setSnippets(data.snippets || [])
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!title || !code) return
-
-        try {
-            await fetch(`${API_URL}/snippets`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, code, language }),
-                credentials: 'include',
-            })
-            setTitle('')
-            setCode('')
-            setIsAdding(false)
-            fetchSnippets()
-        } catch (err) {
-            console.error(err)
-        }
+        await createSnippet({ title, code, language })
+        setTitle('')
+        setCode('')
+        setIsAdding(false)
     }
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this snippet?')) return
-        try {
-            await fetch(`${API_URL}/snippets/${id}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            })
-            fetchSnippets()
-        } catch (err) {
-            console.error(err)
-        }
+        await deleteSnippet(id)
     }
-
-    useEffect(() => {
-        fetchSnippets()
-    }, [])
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -77,7 +31,7 @@ export default function Snippet() {
                 </div>
                 <button
                     onClick={() => setIsAdding(!isAdding)}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
                 >
                     {isAdding ? 'Cancel' : 'Add Snippet'}
                 </button>
@@ -122,7 +76,7 @@ export default function Snippet() {
                                 rows={6}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm"
                                 placeholder="Paste your code here..."
-                            ></textarea>
+                            />
                         </div>
                         <div className="flex justify-end">
                             <button

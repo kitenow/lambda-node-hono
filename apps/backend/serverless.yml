@@ -12,6 +12,7 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     JWT_SECRET: ${env:JWT_SECRET, 'default-secret-change-me'}
     DYNAMO_ENDPOINT: ${self:custom.dynamoEndpoint.${opt:stage, self:provider.stage}}
+    NODE_ENV: ${opt:stage, self:provider.stage, 'dev'}
 
   iam: ${file(./serverless-resources/iam.yml)}
 

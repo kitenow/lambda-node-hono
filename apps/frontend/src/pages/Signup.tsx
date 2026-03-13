@@ -42,11 +42,16 @@ export default function Signup() {
     }
 
     return (
-        <div
-            className="min-h-screen w-full flex flex-col items-center justify-center bg-cover bg-center"
-            style={{ backgroundImage: "url('/sun_park_bg.png')" }}
-        >
-            <div className="w-full max-w-md px-6 animate-fade-in flex flex-col items-center">
+        <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+            {/* Animated Background */}
+            <div
+                className="absolute inset-0 z-0 animate-flyover bg-cover bg-center"
+                style={{
+                    backgroundImage: "url('/background-nature-high.png')",
+                }}
+            />
+            {/* Content Overlay */}
+            <div className="relative z-10 w-full max-w-md px-6 animate-fade-in flex flex-col items-center">
                 <div className="bg-white p-10 rounded-[2rem] w-full shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100">
                     <div className="flex flex-col items-center mb-10">
                         <div className="bg-blue-50 p-4 rounded-2xl mb-4">

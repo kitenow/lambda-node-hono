@@ -65,7 +65,7 @@ auth.post('/signup', async (c) => {
 
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' })
 
-        const isProduction = process.env.NODE_ENV === 'production';
+        const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
         setCookie(c, 'token', token, {
             httpOnly: true,
             secure: isProduction, // Set secure to true only in production
@@ -100,7 +100,7 @@ auth.post('/login', async (c) => {
 
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' })
 
-        const isProduction = process.env.NODE_ENV === 'production';
+        const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
         setCookie(c, 'token', token, {
             httpOnly: true,
             secure: isProduction,
@@ -197,7 +197,13 @@ auth.post('/reset-password', async (c) => {
 // Check Session
 auth.get('/me', async (c) => {
     try {
-        const token = getCookie(c, 'token')
+        let token = getCookie(c, 'token')
+        if (!token) {
+            const authHeader = c.req.header('Authorization')
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1]
+            }
+        }
         if (!token) return c.json({ error: 'Unauthorized' }, 401)
 
         const payload = jwt.verify(token, JWT_SECRET) as any
@@ -220,7 +226,7 @@ auth.get('/me', async (c) => {
 
 // Logout
 auth.post('/logout', async (c) => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
     deleteCookie(c, 'token', {
         path: '/',
         secure: isProduction,

@@ -12,7 +12,14 @@ const app = new Hono()
 // Middleware to verify JWT token from cookie
 const authMiddleware = async (c: any, next: any) => {
     const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
-    const token = c.req.header('Cookie')?.split('; ').find((s: string) => s.startsWith('token='))?.split('=')[1]
+    let token = c.req.header('Cookie')?.split('; ').find((s: string) => s.startsWith('token='))?.split('=')[1]
+
+    if (!token) {
+        const authHeader = c.req.header('Authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1]
+        }
+    }
 
     if (!token) {
         return c.json({ error: 'Unauthorized' }, 401)
