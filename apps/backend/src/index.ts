@@ -5,12 +5,13 @@ import authApp from './account/auth'
 import usersApp from './users'
 import snippetsApp from './snippets'
 import meApp from './me'
+import investApp from './invest'
 import jwt from 'jsonwebtoken'
 
 const app = new Hono()
 
 // Middleware to verify JWT token from cookie
-const authMiddleware = async (c: any, next: any) => {
+export const authMiddleware = async (c: any, next: any) => {
     const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
     let token = c.req.header('Cookie')?.split('; ').find((s: string) => s.startsWith('token='))?.split('=')[1]
 
@@ -57,9 +58,14 @@ app.use('*', async (c, next) => {
 app.route('/auth', authApp)
 
 // --- Protected Routes ---
+app.use('/users/*', authMiddleware)
+app.use('/snippets/*', authMiddleware)
+app.use('/me', authMiddleware)
+app.use('/invest', authMiddleware)
+
 app.route('/users', usersApp)
 app.route('/snippets', snippetsApp)
 app.route('/me', meApp)
-// app.use('/users/*', authMiddleware) // Protecting users routes
+app.route('/invest', investApp)
 
 export const handler = handle(app)
